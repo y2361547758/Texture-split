@@ -1,11 +1,12 @@
 #target photoshop
 
 /*
-    description:
-        面向汉化为目的的，方便编辑TexturePacking生成的游戏资源文件的插件
-    detail:
-        解析plist/xml文件，载入对应的组合图，按文件描述将各个小文件拷贝到新图层，
-        并转行为智能对象或添加矢量蒙版，然后隐藏原图
+<javascriptresource>
+    <name>Texture-split</name>
+    <type>automate</type>
+    <about>面向汉化为目的的，方便编辑TexturePacking生成的游戏资源文件的插件</about>
+    <enableinfo>false</enableinfo>
+</javascriptresource>
 */
 
 // debug level: 0-2 (0:disable, 1:break on error, 2:break at beginning)
@@ -128,6 +129,7 @@ function main() {
     // });
     if (!files) return 1;
     app.preferences.rulerUnits = Units.PIXELS;
+    app.preferences.exportClipboard = false;
     for (var i in files) {
         var texture = new Plist(files[i]);
         if (!texture) return 4;
@@ -145,13 +147,16 @@ function main() {
                 [frame.x + frame.width, frame.y + frame.height],
                 [frame.x + frame.width, frame.y],
             ]);
-            doc.selection.copy();
-            var layer = doc.paste(true);
-            layer.name = frame.name;
-            // layer.kind = LayerKind.SMARTOBJECT;
+            // doc.selection.copy();
+            // var layer = doc.paste(true);
+            // layer.name = frame.name;
+            executeAction(charIDToTypeID("CpTL"), undefined, DialogModes.NO); // CoPy To new Layer
+            executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
+            doc.activeLayer.name = frame.name;
         }
         background.visible = false;
     }
+    app.preferences.exportClipboard = true;
     return 0;
 }
 
