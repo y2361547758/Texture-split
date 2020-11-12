@@ -41,7 +41,7 @@ function Plist(file) {  // file: File | string
     }
     this.png = null;
 
-    this._xml2dict = function(xml) {    // 递归解析xml成对象
+    this._xml2dict = function (xml) {    // 递归解析xml成对象
         var dict = {};
         var key = null, value = null;
         var children = xml.children();
@@ -70,7 +70,7 @@ function Plist(file) {  // file: File | string
         return dict;
     }
 
-    this.load = function(file) {
+    this.load = function (file) {
         if (file instanceof File) this.file = file;
         else if (typeof file == "string") {
             if ('https?://.*\.plist'.match(file)) {
@@ -93,7 +93,7 @@ function Plist(file) {  // file: File | string
         return 0;
     }
 
-    this.parse = function(dict) {
+    this.parse = function (dict) {
         if (dict.metadata.format != 0) return 11;
         this.texture.filename = dict.metadata.realTextureFileName;
         this.texture.width = dict.texture.width;
@@ -103,7 +103,7 @@ function Plist(file) {  // file: File | string
         return 0;
     }
 
-    this.findPng = function() {
+    this.findPng = function () {
         var files = this.folder.getFiles(this.texture.filename);
         if (!files || files.length == 0) {
             this.png = File.openDialog(this.texture.filename, "Image File: *.png; *.jpg; *.jpeg; *.bmp;, Any Files: *.*");
@@ -119,6 +119,31 @@ function Plist(file) {  // file: File | string
     if (r) return r;
     r = this.findPng();
     if (r) return r;
+}
+
+function vectorMask() {
+    var desc24 = new ActionDescriptor();
+    var ref8 = new ActionReference();
+    ref8.putClass(charIDToTypeID("Path"));
+    desc24.putReference(charIDToTypeID("null"), ref8);
+    var ref9 = new ActionReference();
+    ref9.putEnumerated(charIDToTypeID("Path"), charIDToTypeID("Path"), stringIDToTypeID("vectorMask"));
+    desc24.putReference(charIDToTypeID("At  "), ref9);
+    var ref10 = new ActionReference();
+    ref10.putEnumerated(charIDToTypeID("Path"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
+    desc24.putReference(charIDToTypeID("Usng"), ref10);
+    executeAction(charIDToTypeID("Mk  "), desc24, DialogModes.NO);
+}
+
+function vectorMaskLinked() {
+    var desc25 = new ActionDescriptor();
+    var ref11 = new ActionReference();
+    ref11.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
+    desc25.putReference(charIDToTypeID("null"), ref11);
+    var desc26 = new ActionDescriptor();
+    desc26.putBoolean(stringIDToTypeID("vectorMaskLinked"), false);
+    desc25.putObject(charIDToTypeID("T   "), charIDToTypeID("Lyr "), desc26);
+    executeAction(charIDToTypeID("setd"), desc25, DialogModes.NO);
 }
 
 function main() {
@@ -141,18 +166,35 @@ function main() {
             var frame = texture.frames[j];
             doc.activeLayer = background;
             // doc.selection.solid = true;
-            doc.selection.select([
+            var area = [
                 [frame.x, frame.y],
                 [frame.x, frame.y + frame.height],
                 [frame.x + frame.width, frame.y + frame.height],
                 [frame.x + frame.width, frame.y],
-            ]);
+            ];
+            doc.selection.select(area);
             // doc.selection.copy();
             // var layer = doc.paste(true);
             // layer.name = frame.name;
             executeAction(charIDToTypeID("CpTL"), undefined, DialogModes.NO); // CoPy To new Layer
-            executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
+            // executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
             doc.activeLayer.name = frame.name;
+            var points = [];
+            for (var k in area) {
+                var point = new PathPointInfo;
+                point.kind = PointKind.CORNERPOINT;
+                point.anchor = area[k];
+                point.leftDirection = point.anchor;
+                point.rightDirection = point.anchor;
+                points.push(point);
+            }
+            var board = new SubPathInfo()
+            board.operation = ShapeOperation.SHAPEXOR;
+            board.closed = true;
+            board.entireSubPath = points;
+            doc.pathItems.add(frame.name, [board]);
+            vectorMask();
+            vectorMaskLinked();
         }
         background.visible = false;
     }
