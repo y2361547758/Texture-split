@@ -6,6 +6,7 @@
     <type>automate</type>
     <about>面向汉化为目的的，方便编辑TexturePacking生成的游戏资源文件的插件</about>
     <enableinfo>false</enableinfo>
+    <repo>https://github.com/y2361547758/Texture-split</repo>
 </javascriptresource>
 */
 
@@ -147,7 +148,7 @@ function vectorMaskLinked() {
 }
 
 function main() {
-    var files = File.openDialog("Select the plist", "Texture File: *.plist", true)
+    var files = File.openDialog("Select the plist", "Texture File: *.plist; *.xml;, *.*", true)
     // var filename = prompt("Path to plist file");
     // var pfile = File(filename, {
     //     type: "text/xml"
