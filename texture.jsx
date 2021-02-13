@@ -203,15 +203,19 @@ function main() {
                 [frame.x + frame.width, frame.y + frame.height],
                 [frame.x + frame.width, frame.y],
             ];
-            doc.selection.select(area)
-            executeAction(charIDToTypeID("CpTL"), undefined, DialogModes.NO); // CoPy To new Layer
-            doc.activeLayer.name = frame.name;
-            // executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
-            // makePath(area); // create work path with points
-            doc.selection.select(area);
-            selection2path()
-            vectorMask();
-            vectorMaskLinked();
+            try {
+                doc.selection.select(area)
+                executeAction(charIDToTypeID("CpTL"), undefined, DialogModes.NO); // CoPy To new Layer
+                doc.activeLayer.name = frame.name;
+                // executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
+                // makePath(area); // create work path with points
+                doc.selection.select(area);
+                selection2path()
+                vectorMask();
+                vectorMaskLinked();
+            } catch (e) {
+                continue;
+            }
         }
         background.visible = false;
         app.purge(PurgeTarget.HISTORYCACHES);
