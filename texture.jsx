@@ -122,18 +122,47 @@ function Plist(file) {  // file: File | string
     if (r) return r;
 }
 
+function makePath(area) {
+    var points = [];
+    for (var k in area) {
+        var point = new PathPointInfo;
+        point.kind = PointKind.CORNERPOINT;
+        point.anchor = [area[k][0] / 1.35, area[k][1] / 1.35];
+        point.leftDirection = point.anchor;
+        point.rightDirection = point.anchor;
+        points.push(point);
+    }
+    var board = new SubPathInfo()
+    board.operation = ShapeOperation.SHAPEXOR;
+    board.closed = true;
+    board.entireSubPath = points;
+    doc.pathItems.add(frame.name, [board]);
+}
+
+function selection2path() {
+    var desc = new ActionDescriptor();
+    var ref = new ActionReference();
+    ref.putClass(charIDToTypeID("Path"));
+    desc.putReference(charIDToTypeID("null"), ref);
+    var ref = new ActionReference();
+    ref.putProperty(charIDToTypeID("csel"), charIDToTypeID("fsel"));
+    desc.putReference(charIDToTypeID("From"), ref);
+    desc.putUnitDouble(charIDToTypeID("Tlrn"), charIDToTypeID("#Pxl"), 0.500000);
+    executeAction(charIDToTypeID("Mk  "), desc, DialogModes.NO);
+}
+
 function vectorMask() {
-    var desc24 = new ActionDescriptor();
-    var ref8 = new ActionReference();
-    ref8.putClass(charIDToTypeID("Path"));
-    desc24.putReference(charIDToTypeID("null"), ref8);
-    var ref9 = new ActionReference();
-    ref9.putEnumerated(charIDToTypeID("Path"), charIDToTypeID("Path"), stringIDToTypeID("vectorMask"));
-    desc24.putReference(charIDToTypeID("At  "), ref9);
-    var ref10 = new ActionReference();
-    ref10.putEnumerated(charIDToTypeID("Path"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
-    desc24.putReference(charIDToTypeID("Usng"), ref10);
-    executeAction(charIDToTypeID("Mk  "), desc24, DialogModes.NO);
+    var desc = new ActionDescriptor();
+    var ref = new ActionReference();
+    ref.putClass(charIDToTypeID("Path"));
+    desc.putReference(charIDToTypeID("null"), ref);
+    var ref = new ActionReference();
+    ref.putEnumerated(charIDToTypeID("Path"), charIDToTypeID("Path"), stringIDToTypeID("vectorMask"));
+    desc.putReference(charIDToTypeID("At  "), ref);
+    var ref = new ActionReference();
+    ref.putEnumerated(charIDToTypeID("Path"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
+    desc.putReference(charIDToTypeID("Usng"), ref);
+    executeAction(charIDToTypeID("Mk  "), desc, DialogModes.NO);
 }
 
 function vectorMaskLinked() {
@@ -155,12 +184,13 @@ function main() {
     // });
     if (!files) return 1;
     app.preferences.rulerUnits = Units.PIXELS;
+    // app.preferences.typeUnits = TypeUnits.PIXELS;
     app.preferences.exportClipboard = false;
     for (var i in files) {
         var texture = new Plist(files[i]);
         if (!texture) return 4;
         if (typeof texture == "number") return texture;
-        var doc = app.open(texture.png, undefined, false);
+        var doc = app.open(texture.png, undefined, true);
         var background = doc.layers[0];
         // background.name = texture.png.name;
         for (var j in texture.frames) {
@@ -173,60 +203,25 @@ function main() {
                 [frame.x + frame.width, frame.y + frame.height],
                 [frame.x + frame.width, frame.y],
             ];
-            doc.selection.select(area);
-            // doc.selection.copy();
-            // var layer = doc.paste(true);
-            // layer.name = frame.name;
+            doc.selection.select(area)
             executeAction(charIDToTypeID("CpTL"), undefined, DialogModes.NO); // CoPy To new Layer
-            // executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
             doc.activeLayer.name = frame.name;
-            var points = [];
-            for (var k in area) {
-                var point = new PathPointInfo;
-                point.kind = PointKind.CORNERPOINT;
-                point.anchor = area[k];
-                point.leftDirection = point.anchor;
-                point.rightDirection = point.anchor;
-                points.push(point);
-            }
-            var board = new SubPathInfo()
-            board.operation = ShapeOperation.SHAPEXOR;
-            board.closed = true;
-            board.entireSubPath = points;
-            doc.pathItems.add(frame.name, [board]);
+            // executeAction(stringIDToTypeID("newPlacedLayer"), undefined, DialogModes.NO); // covent to smart object
+            // makePath(area); // create work path with points
+            doc.selection.select(area);
+            selection2path()
             vectorMask();
             vectorMaskLinked();
         }
         background.visible = false;
+        app.purge(PurgeTarget.HISTORYCACHES);
     }
     app.preferences.exportClipboard = true;
     return 0;
 }
 
-var r = -1;
 try {
-    r = main();
+    main();
 } catch (e) {
     alert(e);
-}
-
-switch (r) {
-    case 0:
-        // alert("Finished");
-        break;
-    case 1:
-        // alert("User cancal");
-        break;
-    case 2:
-        alert("File not found");
-        break;
-    case 3:
-        alert("Can not open file");
-        break;
-    case 4:
-        alert("Not a texture plist file");
-        break;
-    case -1:
-    default:
-        alert("Unknow error: " + r);
 }
