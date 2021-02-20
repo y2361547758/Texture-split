@@ -186,6 +186,7 @@ function main() {
     app.preferences.rulerUnits = Units.PIXELS;
     // app.preferences.typeUnits = TypeUnits.PIXELS;
     app.preferences.exportClipboard = false;
+    errors = []
     for (var i in files) {
         var texture = new Plist(files[i]);
         if (!texture) return 4;
@@ -214,13 +215,14 @@ function main() {
                 vectorMask();
                 vectorMaskLinked();
             } catch (e) {
-                continue;
+                errors.push(e);
             }
         }
         background.visible = false;
         app.purge(PurgeTarget.HISTORYCACHES);
     }
     app.preferences.exportClipboard = true;
+    if (errors.length) throw errors.join()
     return 0;
 }
 
